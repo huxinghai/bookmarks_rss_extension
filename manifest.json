@@ -16,10 +16,9 @@
     "page": "background.html"
   },
   "permissions": [
-    "activeTab",
-    "tabs",
     "identity",
     "identity.email",
-    "bookmarks"
+    "bookmarks",
+    "http://localhost:3000/"
   ]
 }

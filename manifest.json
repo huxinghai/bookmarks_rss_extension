@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+
+  "name": "bookmarks rss",
+  "description": "书签-RSS",
+  "version": "1.0",
+  "icons": {
+    "24": "rss-icon.png",
+    "38": "rss-icon1.png",
+    "128": "rss-icon2.png"
+  },
+  "browser_action": {
+    "default_icon": "rss-icon.png"
+  },
+  "background": {
+    "page": "background.html"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "identity",
+    "identity.email",
+    "bookmarks"
+  ]
+}

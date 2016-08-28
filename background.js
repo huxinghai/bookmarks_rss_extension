@@ -1,8 +1,8 @@
-var config = chrome.extension.getURL('config.json')
+console.log("load bookmarks rss background");
 
-console.log("load bookmarks rss", config);
+var api_domain = "http://locahost:3000/",
+  currentUser = null;
 
-var currentUser = null
 var remoteRequest = function(url, params, method, callback){
   var m = "GET";
 
@@ -31,22 +31,22 @@ var remoteRequest = function(url, params, method, callback){
 }
 
 var remoteCreateBookmark = function(bookmark, callback){
-  remoteRequest("http://localhost:3000/api/v1/bookmarks", {
+  var bookmark_data = {
     provision_id: bookmark.id,
     parent_id: bookmark.parentId,
     index: bookmark.index,
     title: bookmark.title,
+    url: bookmark.url,
     date_added: bookmark.dateAdded,
     date_group_modified: bookmark.dateGroupModified
-  }, "POST", function(data){
+  }
+  remoteRequest(api_domain + "api/v1/bookmarks", {bookmark: bookmark_data}, "POST", function(data){
     callback && callback(data)
   })
 }
 
 var createBookmarks = function(bookmark){
-  if(bookmark.url){
-    remoteCreateBookmark(bookmark)  
-  }
+  if(bookmark.url) remoteCreateBookmark(bookmark)
   if(bookmark.children && bookmark.children.length > 0){
     bookmark.children.forEach(function(bm){
       createBookmarks(bm)
@@ -57,7 +57,7 @@ var createBookmarks = function(bookmark){
 chrome.identity.getProfileUserInfo(function(userInfo) {
   userInfo.provision_id = userInfo.id
 
-  remoteRequest("http://localhost:3000/api/v1/users", {
+  remoteRequest(api_domain + "/api/v1/users", {
     user: userInfo
   }, "POST", function(res){
 
@@ -67,7 +67,7 @@ chrome.identity.getProfileUserInfo(function(userInfo) {
         createBookmarks(bookmark)
       })
     });
-    
+
     chrome.bookmarks.onCreated.addListener(function(id, bookmark){
       console.log("onCreated lister")
       console.log(arguments)

@@ -1,6 +1,6 @@
 console.log("load bookmarks rss background");
 
-var api_domain = "http://locahost:3000/",
+var api_domain = "http://localhost:3000/",
   currentUser = null;
 
 var remoteRequest = function(url, params, method, callback){
@@ -30,42 +30,68 @@ var remoteRequest = function(url, params, method, callback){
   xhr.send(options);
 }
 
-var remoteCreateBookmark = function(bookmark, callback){
-  var bookmark_data = {
-    provision_id: bookmark.id,
-    parent_id: bookmark.parentId,
-    index: bookmark.index,
-    title: bookmark.title,
-    url: bookmark.url,
-    date_added: bookmark.dateAdded,
-    date_group_modified: bookmark.dateGroupModified
-  }
-  remoteRequest(api_domain + "api/v1/bookmarks", {bookmark: bookmark_data}, "POST", function(data){
+var signUp = function(userInfo, callback){
+  userInfo.provision_id = userInfo.id
+  remoteRequest(api_domain + "api/v1/users", {
+    user: userInfo
+  }, "POST", function(res){
+    console.log("sign up", res)
+    currentUser = res 
+    callback && callback(currentUser)
+  }) 
+}
+
+var remoteCreateBookmark = function(data, callback){
+  remoteRequest(api_domain + "api/v1/bookmarks", {bookmarks: data}, "POST", function(data){
     callback && callback(data)
   })
 }
 
-var createBookmarks = function(bookmark){
-  if(bookmark.url) remoteCreateBookmark(bookmark)
+var get_bookmarks = function(bookmark, items){
+  if(!items) items = []
+  if(bookmark.url){
+    items.push({
+      provision_id: bookmark.id,
+      parent_id: bookmark.parentId,
+      index: bookmark.index,
+      title: bookmark.title,
+      url: bookmark.url,
+      date_added: bookmark.dateAdded,
+      date_group_modified: bookmark.dateGroupModified
+    })
+  }
+
   if(bookmark.children && bookmark.children.length > 0){
     bookmark.children.forEach(function(bm){
-      createBookmarks(bm)
+      get_bookmarks(bm, items)
     })
   }
 }
 
+var arrayPage = function(items, page_size, page_num){
+  if(!page_num || page_num == 0) page_num = 1
+  total_page = Math.ceil(items.length / page_size)
+  if(page_num > total_page) return [];
+
+  return items.slice((page_size * (page_num-1)), page_size * page_num)
+}
+
 chrome.identity.getProfileUserInfo(function(userInfo) {
-  userInfo.provision_id = userInfo.id
 
-  remoteRequest(api_domain + "/api/v1/users", {
-    user: userInfo
-  }, "POST", function(res){
+  signUp(userInfo, function(res){
 
-    currentUser = res
     chrome.bookmarks.getTree(function(bookmarks){
+      var res_bookmarks = []
       bookmarks.forEach(function(bookmark){
-        createBookmarks(bookmark)
+        get_bookmarks(bookmark, res_bookmarks)
       })
+
+      var page_size = 10,
+        total_page = Math.ceil(res_bookmarks.length / page_size);
+
+      for(var i=0; i<total_page; i++){
+        remoteCreateBookmark(arrayPage(res_bookmarks, page_size, i+1))
+      } 
     });
 
     chrome.bookmarks.onCreated.addListener(function(id, bookmark){

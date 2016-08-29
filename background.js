@@ -1,6 +1,6 @@
 console.log("load bookmarks rss background");
 
-var api_domain = "http://localhost:3000/",
+var api_domain = "http://localhost:3000",
   currentUser = null;
 
 var remoteRequest = function(url, params, method, callback){
@@ -13,7 +13,7 @@ var remoteRequest = function(url, params, method, callback){
 
   if(typeof method == "function")
     callback = method
-  else
+  else if(method)
     m = method
 
   var options = JSON.stringify(params);
@@ -23,16 +23,22 @@ var remoteRequest = function(url, params, method, callback){
   if(currentUser) xhr.setRequestHeader("Authorization", currentUser.provision_id)
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4 && xhr.status == 200) {
-      var resp = JSON.parse(xhr.responseText);
+      var resp = JSON.parse((xhr.responseText == "" ? "{}" : xhr.responseText));
       callback && callback(resp);
     }
   }
   xhr.send(options);
 }
 
+var fetchApiRequest = function(){
+  var data = Array.prototype.slice.call(arguments)
+  data[0] = api_domain + data[0]
+  remoteRequest.apply(this, data)
+}
+
 var signUp = function(userInfo, callback){
   userInfo.provision_id = userInfo.id
-  remoteRequest(api_domain + "api/v1/users", {
+  fetchApiRequest("/api/v1/users", {
     user: userInfo
   }, "POST", function(res){
     console.log("sign up", res)
@@ -42,14 +48,15 @@ var signUp = function(userInfo, callback){
 }
 
 var remoteCreateBookmark = function(data, callback){
-  remoteRequest(api_domain + "api/v1/bookmarks", {bookmarks: data}, "POST", function(data){
+  fetchApiRequest("/api/v1/bookmarks", {bookmarks: data}, "POST", function(data){
     callback && callback(data)
   })
 }
 
-var get_bookmarks = function(bookmark, items){
+var get_bookmarks = function(bookmark, items, date_added_limit){
   if(!items) items = []
-  if(bookmark.url){
+  if(!date_added_limit) date_added_limit = 0
+  if(bookmark.url && bookmark.dateAdded > date_added_limit){
     items.push({
       provision_id: bookmark.id,
       parent_id: bookmark.parentId,
@@ -75,19 +82,19 @@ chrome.identity.getProfileUserInfo(function(userInfo) {
     chrome.bookmarks.getTree(function(bookmarks){
       var res_bookmarks = []
       bookmarks.forEach(function(bookmark){
-        get_bookmarks(bookmark, res_bookmarks)
+        get_bookmarks(bookmark, res_bookmarks, currentUser.last_date_added)
       })
       remoteCreateBookmark(res_bookmarks)
     });
 
     chrome.bookmarks.onCreated.addListener(function(id, bookmark){
-      console.log("onCreated lister")
-      console.log(arguments)
+      var data = []
+      get_bookmarks(bookmark, data)
+      remoteCreateBookmark(data)
     });
 
     chrome.bookmarks.onRemoved.addListener(function(id, bookmark){
-      console.log("onRemoved lister")
-      console.log(arguments)
+      fetchApiRequest("/api/v1/bookmarks/"+ id, "DELETE")
     });
 
   })

@@ -68,14 +68,6 @@ var get_bookmarks = function(bookmark, items){
   }
 }
 
-var arrayPage = function(items, page_size, page_num){
-  if(!page_num || page_num == 0) page_num = 1
-  total_page = Math.ceil(items.length / page_size)
-  if(page_num > total_page) return [];
-
-  return items.slice((page_size * (page_num-1)), page_size * page_num)
-}
-
 chrome.identity.getProfileUserInfo(function(userInfo) {
 
   signUp(userInfo, function(res){
@@ -85,13 +77,7 @@ chrome.identity.getProfileUserInfo(function(userInfo) {
       bookmarks.forEach(function(bookmark){
         get_bookmarks(bookmark, res_bookmarks)
       })
-
-      var page_size = 10,
-        total_page = Math.ceil(res_bookmarks.length / page_size);
-
-      for(var i=0; i<total_page; i++){
-        remoteCreateBookmark(arrayPage(res_bookmarks, page_size, i+1))
-      } 
+      remoteCreateBookmark(res_bookmarks)
     });
 
     chrome.bookmarks.onCreated.addListener(function(id, bookmark){

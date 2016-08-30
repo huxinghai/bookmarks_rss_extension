@@ -70,7 +70,7 @@ var get_bookmarks = function(bookmark, items, date_added_limit){
 
   if(bookmark.children && bookmark.children.length > 0){
     bookmark.children.forEach(function(bm){
-      get_bookmarks(bm, items)
+      get_bookmarks(bm, items, date_added_limit)
     })
   }
 }

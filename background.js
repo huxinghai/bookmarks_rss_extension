@@ -84,13 +84,13 @@ chrome.identity.getProfileUserInfo(function(userInfo) {
       bookmarks.forEach(function(bookmark){
         get_bookmarks(bookmark, res_bookmarks, currentUser.last_date_added)
       })
-      remoteCreateBookmark(res_bookmarks)
+      if(res_bookmarks.length > 0) remoteCreateBookmark(res_bookmarks)
     });
 
     chrome.bookmarks.onCreated.addListener(function(id, bookmark){
       var data = []
       get_bookmarks(bookmark, data)
-      remoteCreateBookmark(data)
+      if(data.length > 0) remoteCreateBookmark(data)
     });
 
     chrome.bookmarks.onRemoved.addListener(function(id, bookmark){

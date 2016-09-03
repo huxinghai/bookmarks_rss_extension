@@ -20,7 +20,7 @@ var remoteRequest = function(url, params, method, callback){
   var xhr = new XMLHttpRequest();
   xhr.open(m, url, true);
   xhr.setRequestHeader("Content-type", "application/json; charset=utf-8");
-  if(currentUser) xhr.setRequestHeader("Authorization", currentUser.provision_id)
+  // if(currentUser) xhr.setRequestHeader("X-CSRF-Token", currentUser.authenticity_token)
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4 && xhr.status == 200) {
       var resp = JSON.parse((xhr.responseText == "" ? "{}" : xhr.responseText));
@@ -114,7 +114,7 @@ var setDisplayBadge = function(number){
 }
 
 chrome.browserAction.onClicked.addListener(function(tab) {
-  chrome.tabs.create({ url: "http://www.168ta.com" });
+  chrome.tabs.create({ url: api_domain + "/articles" });
   setDisplayBadge()
 });
 

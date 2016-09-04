@@ -20,5 +20,6 @@
     "identity.email",
     "bookmarks",
     "http://localhost:3000/"
-  ]
+  ],
+  "content_security_policy": "script-src 'self' http://localhost:3000/; object-src 'self'"
 }
